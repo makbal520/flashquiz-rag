@@ -1,18 +1,58 @@
 # Flashquiz RAG — AI-Powered Study Assistant
 
-An AI-powered flashcard and Q&A study tool built with Retrieval-Augmented Generation (RAG). Upload any PDF, auto-extract key topics, generate flashcards, and get AI evaluation on your answers.
+An intelligent flashcard system that uses **Retrieval-Augmented Generation (RAG)** to turn any PDF into an interactive study session. Built for the *AI in Law* course, extended into a full AI learning platform.
 
 ---
 
-## Demo
+## AI Architecture
 
-> Upload PDF → Select Topics → Study with Flashcards → Get AI Feedback
+The core of Flashquiz is a RAG pipeline that grounds every AI response in the uploaded document — eliminating hallucination and ensuring answers are traceable to source material.
+
+```
+PDF → Chunking → Embedding → ChromaDB
+                                 ↓
+User Input → Query Embedding → Retrieval (top-k) → LLM → Response
+```
+
+**Key AI components:**
+
+- **Embedding** — HuggingFace `all-MiniLM-L6-v2` converts document chunks and user queries into semantic vectors
+- **Vector Store** — ChromaDB stores and retrieves embeddings via cosine similarity search
+- **RAG Pipeline** — LangChain orchestrates the retrieve → augment → generate flow
+- **LLM** — GPT via OpenAI-compatible API handles keyword extraction, flashcard generation, answer evaluation, and Q&A
+- **AI Evaluator** — Compares user answers against retrieved document context and model answers, returning a structured score and feedback
 
 ---
 
-## UI Design
+## Features
 
-The interface was designed in Figma as low-fidelity wireframes before implementation, covering two main screens:
+- Upload any PDF and auto-extract key topics using LLM analysis
+- Select topics and generate RAG-grounded flashcards
+- Answer by voice or text
+- AI evaluation with score (1–10), feedback, and model answer
+- Multi-turn Q&A chat — ask anything about the document
+- Session summary with retry for weak cards
+- Persistent vector store — PDF only processed once
+
+---
+
+## Tech Stack
+
+| Layer | Tools |
+|---|---|
+| RAG & Retrieval | LangChain, ChromaDB, HuggingFace Embeddings |
+| LLM | OpenAI API (GPT-3.5-turbo) |
+| Backend | FastAPI, Python 3.12 |
+| Frontend | Vanilla HTML / CSS / JS |
+| PDF Processing | LangChain PyPDFLoader |
+| Config | python-dotenv |
+
+---
+
+## UI
+
+Two-page frosted glass interface inspired by soft matte design:
+
 Page 1 - Upload & Configure:
 ![alt text](image.png)
 ![alt text](image-1.png)
@@ -38,53 +78,50 @@ A usability evaluation was conducted using the System Usability Scale (SUS), ach
 
 ---
 
-## Features
-
-- **RAG Pipeline** — PDF is chunked, vectorized, and stored in ChromaDB; answers are grounded in retrieved document passages
-- **Auto Keyword Extraction** — LLM analyzes the document and extracts key topics for study
-- **Flashcard Generation** — Topic-specific Q&A cards generated from retrieved context
-- **Answer Evaluation** — AI scores user answers (1–10) with feedback and model answer
-- **Voice & Text Input** — Users can answer by voice recording or typing
-- **Q&A Chat Sidebar** — Ask any question about the document, with multi-turn conversation support
-- **Session Summary** — Score breakdown by topic with option to retry weak cards
-- **Export** — Download session summary as `.txt`
-
----
-
-## Tech Stack
-
-| Layer | Tools |
-|---|---|
-| RAG Pipeline | LangChain, ChromaDB, HuggingFace Embeddings |
-| LLM | OpenAI API (GPT) |
-| Frontend | Streamlit |
-| PDF Processing | PyPDF, LangChain Document Loaders |
-| Environment | Python 3.12, dotenv |
-
----
-
 ## Project Structure
 
-'''
+```
 flashcard_RAG/
-├── backend/
-│   └── main.py         
 ├── core/
-│   ├── loader.py
-│   ├── vectorstore.py
-│   ├── keywords.py
-│   ├── flashcard.py
-│   ├── qa.py
-│   ├── evaluator.py
-│   └── client.py
+│   ├── loader.py        # PDF loading and chunking
+│   ├── vectorstore.py   # ChromaDB persistence
+│   ├── keywords.py      # LLM keyword extraction
+│   ├── flashcard.py     # RAG flashcard generation
+│   ├── qa.py            # Multi-turn Q&A
+│   ├── evaluator.py     # AI answer scoring
+│   └── client.py        # Unified LLM client
+├── backend/
+│   └── main.py          # FastAPI routes
 ├── frontend/
-│   └── index.html       
-├── doc/
-├── chroma_db/
+│   └── index.html       # Full UI
 └── .env
-'''
+```
+
 ---
 
+## Getting Started
+
+```bash
+pip install -r requirements.txt
+
+# Add your API keys
+cp .env.example .env
+
+# Start backend
+uvicorn backend.main:app --reload --port 8000
+
+# Open frontend
+open frontend/index.html
+```
+
+---
+
+## Environment Variables
+
+```
+OPENAI_API_KEY=your_key
+LLM_BASE_URL=https://your-llm-endpoint/v1
+```
 ## Getting Started
 
 ```bash
