@@ -1,6 +1,6 @@
 # Flashquiz RAG — AI-Powered Study Assistant
 
-An intelligent flashcard system that uses **Retrieval-Augmented Generation (RAG)** to turn any PDF into an interactive study session. Built for the *AI in Law* course, extended into a full AI learning platform.
+An intelligent flashcard system that uses **Retrieval-Augmented Generation (RAG)** to turn any PDF into an interactive study session. Built for the Introduction to deep learning and other courses, extended into a full AI learning platform.
 
 ---
 
