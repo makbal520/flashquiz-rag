@@ -1,146 +1,91 @@
-# Flashquiz RAG — AI-Powered Study Assistant
+# FlashQuiz RAG+ — Design Process
 
-An intelligent flashcard system that uses **Retrieval-Augmented Generation (RAG)** to turn any PDF into an interactive study session. Built for the Introduction to deep learning and other courses, extended into a full AI learning platform.
+FlashQuiz RAG+ is a study assistant that turns a single PDF into flashcards
+and grounded Q&A — where every score and every answer traces back to the
+sentence it came from. This document walks through the design process end
+to end: **requirements → interaction flow → visual design**, in the order
+they were actually produced.
 
----
-
-## AI Architecture
-
-The core of Flashquiz is a RAG pipeline that grounds every AI response in the uploaded document — eliminating hallucination and ensuring answers are traceable to source material.
-
-```
-PDF → Chunking → Embedding → ChromaDB
-                                 ↓
-User Input → Query Embedding → Retrieval (top-k) → LLM → Response
-```
-
-**Key AI components:**
-
-- **Embedding** — HuggingFace `all-MiniLM-L6-v2` converts document chunks and user queries into semantic vectors
-- **Vector Store** — ChromaDB stores and retrieves embeddings via cosine similarity search
-- **RAG Pipeline** — LangChain orchestrates the retrieve → augment → generate flow
-- **LLM** — GPT via OpenAI-compatible API handles keyword extraction, flashcard generation, answer evaluation, and Q&A
-- **AI Evaluator** — Compares user answers against retrieved document context and model answers, returning a structured score and feedback
+> Full product & engineering write-up: [`PRD.md`](./PRD.md)
 
 ---
 
-## Features
+## 1. Product Requirements
 
-- Upload any PDF and auto-extract key topics using LLM analysis
-- Select topics and generate RAG-grounded flashcards
-- Answer by voice or text
-- AI evaluation with score (1–10), feedback, and model answer
-- Multi-turn Q&A chat — ask anything about the document
-- Session summary with retry for weak cards
-- Persistent vector store — PDF only processed once
+The [PRD](./PRD.md) defines the product principles, information
+architecture, MVP scope, and acceptance criteria. Two decisions from it
+shape everything downstream in this document:
 
----
+- **Traceability first.** No AI-generated answer reaches the UI without a
+  visible source — a page number, a similarity score, a rank. This is a
+  product principle, not a feature toggle.
+- **Progressive disclosure.** The study task (flashcards, questions) stays
+  the primary layer. Evidence, confidence scores, and evaluation metrics
+  are one tap away, never competing with the main task for attention.
 
-## Tech Stack
-
-| Layer | Tools |
+| Principle | PRD section |
 |---|---|
-| RAG & Retrieval | LangChain, ChromaDB, HuggingFace Embeddings |
-| LLM | OpenAI API (GPT-3.5-turbo) |
-| Backend | FastAPI, Python 3.12 |
-| Frontend | Vanilla HTML / CSS / JS |
-| PDF Processing | LangChain PyPDFLoader |
-| Config | python-dotenv |
+| Evidence-first answers | §4 Product Principles |
+| MVP scope (P0 / P1 / out of scope) | §6 |
+| Concept data model (`RagEvent`, `EvalRecord`) | §10 |
+| Acceptance criteria | §13 |
 
 ---
 
-## UI
+## 2. Interaction Flow
 
-Two-page frosted glass interface inspired by soft matte design:
+Before any visual design, the core loop was mapped as a five-stage flow —
+**Import → Prepare → Study → Verify → Explore** — to decide *where*
+evidence and evaluation should surface without disrupting the study task.
 
-Page 1 - Upload & Configure:
-![alt text](image.png)
-![alt text](image-1.png)
+![Interaction flow](./assets/design/interaction-flow.svg)
 
-Page 2 - Study Mode:
-![alt text](image-2.png)
-![alt text](<截屏2026-05-29 18.34.29.png>)
-![alt text](<截屏2026-05-29 18.36.33.png>)
+Key decisions encoded in this flow:
 
-**Page 1 — Upload & Configure**
-- PDF upload zone with processing status
-- Auto-extracted keyword chips (multi-select)
-- Settings: cards per topic, answer mode (voice / text / both)
-
-**Page 2 — Study Mode**
-- Flashcard viewer with progress bar
-- Voice recording + text input for answers
-- AI evaluation with score and feedback
-- Collapsible Q&A chat sidebar
-- Session summary with retry wrong cards
-
-A usability evaluation was conducted using the System Usability Scale (SUS), achieving a score of **78/100**, indicating good usability.
+- **Evidence is collapsed by default** in both the Verify and Ask stages —
+  expanded only on request (`⌄ View evidence`), keeping the main answer as
+  the primary read.
+- **Low confidence is text-led**, never color-only (e.g. *"Low confidence ·
+  0.61"*), so the signal survives for screen readers and colorblind users.
+- **Session completion feeds Insights** directly — every mistake becomes an
+  input to a concrete, scoped review plan rather than a raw log.
 
 ---
 
-## Project Structure
+## 3. Visual Design — iOS UI
 
-```
-flashcard_RAG/
-├── core/
-│   ├── loader.py        # PDF loading and chunking
-│   ├── vectorstore.py   # ChromaDB persistence
-│   ├── keywords.py      # LLM keyword extraction
-│   ├── flashcard.py     # RAG flashcard generation
-│   ├── qa.py            # Multi-turn Q&A
-│   ├── evaluator.py     # AI answer scoring
-│   └── client.py        # Unified LLM client
-├── backend/
-│   └── main.py          # FastAPI routes
-├── frontend/
-│   └── index.html       # Full UI
-└── .env
-```
+Visual direction: **glassmorphism × soft UI**. Blue is reserved
+exclusively for direct actions and active state; translucent cards group
+core content; evidence stays visually quieter than the primary answer but
+never hidden more than one tap away.
 
----
+![FlashQuiz RAG+ iOS screens](./assets/design/ui-screens.png)
 
-## Getting Started
+| Screen | Purpose | Ties back to |
+|---|---|---|
+| **01 · Library** | Start a focused study session; one PDF per session | PRD §7.1 |
+| **02 · Study** | Recall before reveal — question first, answer second | PRD §6.1.3 |
+| **03 · Verify** | Feedback with traceable evidence, collapsed by default | PRD §6.1.5 (Evidence panel) |
+| **04 · Ask** | Conversational RAG, grounded in the uploaded document | PRD §6.1.4 |
+| **05 · Insights** | Turns mistakes into a small, concrete review plan | PRD §6.1.7 |
 
-```bash
-pip install -r requirements.txt
-
-# Add your API keys
-cp .env.example .env
-
-# Start backend
-uvicorn backend.main:app --reload --port 8000
-
-# Open frontend
-open frontend/index.html
-```
+**Design rationale** (from the original visual spec): blue is reserved for
+direct actions and active state; translucent cards group core content;
+evidence remains quieter but accessible; Insights turns mistakes into a
+small, concrete review plan.
 
 ---
 
-## Environment Variables
+## Where this lives in the repo
 
 ```
-OPENAI_API_KEY=your_key
-LLM_BASE_URL=https://your-llm-endpoint/v1
-```
-## Getting Started
-
-```bash
-# Install dependencies
-pip install -r requirements.txt
-
-# Set up environment variables
-cp .env.example .env
-# Fill in your API key and LLM base URL
-
-# Run the app
-streamlit run ui/app.py
+├── DESIGN_PROCESS.md        ← this file
+├── PRD.md                   ← full product requirements
+└── assets/design/
+    ├── interaction-flow.svg
+    └── ui-screens.png
 ```
 
----
-
-## Environment Variables
-
-```
-OPENAI_API_KEY=your_api_key
-LLM_BASE_URL=https://your-llm-endpoint/v1
-```
+The corresponding implementation (FastAPI backend + vanilla-JS frontend)
+lives in `backend/` and `frontend/` at the repo root — see the top-level
+`README.md` for how to run it.
