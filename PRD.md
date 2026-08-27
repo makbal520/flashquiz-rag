@@ -1,239 +1,239 @@
-# FlashQuiz RAG+ 可解释学习助手 产品需求文档
+# FlashQuiz RAG+ Explainable Study Assistant — Product Requirements Document
 
-> 版本：v2.0（在 flashquiz-rag v1 基础上的可观测性与评估升级）
-> 目标交付周期：2 个工作日（约 16 小时）
-> 产品形态：桌面端优先的单用户 Web 应用
-> 参考方向：RAG 应用的检索可追溯性与生成质量评估，而非单纯的问答功能堆砌
+> Version: v2.0 (an observability & evaluation upgrade on top of flashquiz-rag v1)
+> Target delivery window: 2 working days (~16 hours)
+> Product form: desktop-first, single-user web app
+> Reference direction: retrieval traceability and generation-quality evaluation for RAG applications, not just stacking more Q&A features
 
-## 1. 文档目的
+## 1. Purpose of this document
 
-本文用于明确 FlashQuiz RAG+ 的产品范围、系统架构、评估方法与验收标准，在 v1（PDF→闪卡→问答）基础上，把 RAG 系统的**检索过程**和**生成质量**从黑箱变为用户和开发者都可验证的透明流程，交付一个不仅"能用"、而且"可信、可评估、可演进"的学习助手。
+This document defines the product scope, system architecture, evaluation methodology, and acceptance criteria for FlashQuiz RAG+. Building on v1 (PDF → flashcards → Q&A), it turns the RAG system's **retrieval process** and **generation quality** from a black box into something both users and developers can verify — delivering a study assistant that isn't just "functional," but **trustworthy, measurable, and built to evolve**.
 
-## 2. 产品概述
+## 2. Product Overview
 
-### 2.1 产品定位
+### 2.1 Product positioning
 
-FlashQuiz RAG+ 是一个基于 RAG（检索增强生成）的学习助手，用户上传 PDF 学习资料后，系统自动生成闪卡、支持多轮问答，并把每一次回答的**证据来源、检索置信度、生成质量评分**呈现给用户，而不是只给出一个孤立的答案。
+FlashQuiz RAG+ is a RAG-based (Retrieval-Augmented Generation) study assistant. After a user uploads a PDF, the system automatically generates flashcards, supports multi-turn Q&A, and surfaces the **evidence source, retrieval confidence, and generation quality score** behind every answer — rather than returning an answer in isolation.
 
-v2 不改变核心学习体验，而是在其之上叠加一层可观测性：用户可以随时追溯"这个答案是从文档哪一段推导出来的"，开发者可以随时验证"这次改动是否真的提升了检索/生成效果"。
+v2 doesn't change the core study experience; it adds a layer of observability on top of it. Users can always trace "which part of the document this answer came from," and developers can always verify "whether this change actually improved retrieval/generation quality."
 
-### 2.2 核心价值
+### 2.2 Core value
 
-- 一次上传，自动生成可交互闪卡与开放式问答，覆盖被动阅读之外的主动学习方式。
-- 每个回答均可溯源到原文片段，用户可自行判断答案是否可信，而非盲目相信模型输出。
-- 内置离线评估流水线，任何检索策略、embedding 模型或 chunk 参数的调整都能量化验证效果，而不是凭感觉调参。
-- 支持中英文学习资料，闪卡与问答界面双语切换，兼顾中文用户与英文课程资料的场景。
+- One upload automatically generates interactive flashcards and open-ended Q&A, covering active-recall study modes beyond passive reading.
+- Every answer traces back to a source excerpt, so users can judge credibility for themselves instead of trusting model output blindly.
+- A built-in offline evaluation pipeline lets any change to retrieval strategy, embedding model, or chunk parameters be quantitatively verified — not tuned by feel.
+- Supports both Chinese and English study material, with a bilingual toggle for the flashcard and Q&A interface, covering both Chinese-speaking users and English-language course material.
 
-### 2.3 MVP 成功标准
+### 2.3 MVP success criteria
 
-v2 完成时，用户应能在一次会话中完整体验以下闭环：
+When v2 is complete, a user should be able to complete the following loop end-to-end in a single session:
 
-1. 上传一份 PDF，系统在可接受时间内完成分块、向量化并生成候选主题。
-2. 选择主题生成闪卡，作答后获得评分、反馈和标准答案。
-3. 在问答模式下提出一个问题，点击"查看依据"能看到被检索到的原文片段及相似度分数。
-4. 开发者能够运行离线评估脚本，对一组标注问题得到检索命中率、生成语义相似度和 LLM 评分，并按题型（事实型/概念型/推理型）分组呈现。
+1. Upload a PDF; the system completes chunking, embedding, and candidate-topic generation within an acceptable time.
+2. Select topics to generate flashcards, answer them, and receive a score, feedback, and a model answer.
+3. Ask a question in Q&A mode and click "View evidence" to see the retrieved source excerpt and similarity score.
+4. As a developer, run the offline evaluation script against a labeled question set to get retrieval hit rate, generation semantic similarity, and an LLM score, grouped by question type (factual / conceptual / reasoning).
 
-## 3. 用户与使用场景
+## 3. Users and Use Cases
 
-### 3.1 目标用户
+### 3.1 Target users
 
-- 需要快速消化课程 PDF、讲义或论文的学生和自学者。
-- 希望在简历/作品集中展示"理解 RAG 系统工程与评估"能力的求职者（本项目的次要但明确的目标用户是产品作者本人）。
+- Students and self-learners who need to quickly absorb course PDFs, lecture notes, or papers.
+- Job seekers who want to demonstrate "understanding of RAG systems engineering and evaluation" in a resume/portfolio (a secondary but explicit target user of this project is the product's own author).
 
-### 3.2 核心场景
+### 3.2 Core scenarios
 
-| 场景 | 用户目标 | v2 对应能力 |
+| Scenario | User goal | v2 capability |
 | --- | --- | --- |
-| 快速掌握新资料 | 把一份 PDF 转化为可测验的知识点 | PDF 上传、关键词抽取、闪卡生成 |
-| 自我检测 | 检验对某个主题的掌握程度 | 闪卡作答、AI 评分与反馈 |
-| 深入提问 | 针对文档提出开放性问题 | 多轮问答 Chat |
-| 判断答案可信度 | 确认回答不是模型幻觉 | 证据溯源面板、相似度分数展示 |
-| 系统效果验证 | 验证调参/换模型是否真的更好 | 离线评估脚本、分题型统计报表 |
+| Quickly master new material | Turn a PDF into testable knowledge points | PDF upload, keyword extraction, flashcard generation |
+| Self-assessment | Check mastery of a given topic | Flashcard answering, AI scoring & feedback |
+| Deeper inquiry | Ask open-ended questions about the document | Multi-turn Q&A chat |
+| Judge answer credibility | Confirm an answer isn't a model hallucination | Evidence-trace panel, similarity score display |
+| Verify system effectiveness | Confirm a parameter/model change actually helped | Offline evaluation script, per-question-type stats |
 
-## 4. 产品原则
+## 4. Product Principles
 
-1. **可追溯优先**：任何由 LLM 生成的答案，都必须能展示其依据的原文片段，不允许"裸答案"。
-2. **评估先于优化**：任何检索参数（chunk size、top-k、embedding 模型）的调整，必须先有评估数据支撑，再合并到主流程。
-3. **渐进呈现**：默认界面保持简洁，溯源与评估细节收纳在可展开的面板中，不干扰核心学习流程。
-4. **状态一致**：闪卡模式与问答模式共享同一个向量库和检索逻辑，不允许两条数据路径产生不一致的答案。
-5. **可替换边界**：检索层（vector store）、生成层（LLM client）、评估层三者解耦，后续可独立替换 embedding 模型或 LLM 供应商而不影响其他模块。
+1. **Traceability first**: any LLM-generated answer must be able to show the source excerpt it's based on — no "naked answers" allowed.
+2. **Evaluate before optimizing**: any change to retrieval parameters (chunk size, top-k, embedding model) must be backed by evaluation data before being merged into the main pipeline.
+3. **Progressive disclosure**: the default UI stays simple; evidence and evaluation detail live in expandable panels and never interrupt the core study flow.
+4. **Consistent state**: flashcard mode and Q&A mode share the same vector store and retrieval logic — the two data paths must never produce inconsistent answers.
+5. **Replaceable boundaries**: the retrieval layer (vector store), generation layer (LLM client), and evaluation layer are decoupled, so the embedding model or LLM provider can be swapped independently without affecting the other modules.
 
-## 5. 信息架构
+## 5. Information Architecture
 
-### 5.1 全局结构
+### 5.1 Global structure
 
 ```text
 FlashQuiz RAG+
-├── 顶部栏
-│   ├── 产品名称 / 当前文档
-│   ├── Study（闪卡）/ Ask（问答）/ Insights（评估看板）
-│   └── 语言切换
+├── Top bar
+│   ├── Product name / current document
+│   ├── Study (flashcards) / Ask (Q&A) / Insights (evaluation dashboard)
+│   └── Language toggle
 ├── Upload & Configure
-│   ├── PDF 上传与处理状态
-│   ├── 关键词主题多选
-│   └── 每主题卡片数、作答模式设置
-├── Study 闪卡模式
-│   ├── 卡片查看器与进度条
-│   ├── 语音/文本作答
-│   ├── AI 评分与反馈
-│   └── 证据溯源折叠面板
-├── Ask 问答模式
-│   ├── 多轮对话
-│   └── 每条回答下的"查看依据"展开区
-└── Insights 评估看板（开发者/求职展示视角）
-    ├── 检索相关度、生成相似度、LLM 评分总览
-    ├── 按题型（事实/概念/推理）分组对比
-    └── 历次参数调整的效果对比曲线
+│   ├── PDF upload and processing status
+│   ├── Multi-select keyword topics
+│   └── Cards-per-topic and answer-mode settings
+├── Study (flashcard mode)
+│   ├── Card viewer with progress bar
+│   ├── Voice / text answering
+│   ├── AI scoring and feedback
+│   └── Collapsible evidence-trace panel
+├── Ask (Q&A mode)
+│   ├── Multi-turn conversation
+│   └── A "view evidence" expandable section under each answer
+└── Insights (evaluation dashboard — developer / portfolio view)
+    ├── Overview of retrieval relevance, generation similarity, LLM score
+    ├── Grouped comparison by question type (factual / conceptual / reasoning)
+    └── Comparison curves across parameter-tuning runs
 ```
 
-### 5.2 证据溯源的呈现形式
+### 5.2 How evidence tracing is presented
 
-每条 AI 生成的回答（闪卡反馈或问答）均附带一个可展开区域，包含：
+Every AI-generated response (flashcard feedback or Q&A) comes with an expandable section containing:
 
-| 字段 | 说明 |
+| Field | Description |
 | --- | --- |
-| 引用片段 | 被检索到并实际用于生成答案的原文 chunk（可高亮定位到 PDF 页码） |
-| 相似度分数 | 该片段与用户问题的向量相似度（0–1） |
-| 召回排名 | 该片段在本次 top-k 检索中的排名 |
-| 置信度提示 | 若 top-1 相似度低于阈值，显示"该回答可能不完全基于文档内容"的提示 |
+| Cited excerpt | The retrieved source chunk actually used to generate the answer (can be highlighted and located to a PDF page) |
+| Similarity score | The vector similarity (0–1) between this chunk and the user's question |
+| Retrieval rank | This chunk's rank within the current top-k retrieval |
+| Confidence hint | If the top-1 similarity is below a threshold, show a hint that "this answer may not be fully grounded in the document" |
 
-## 6. 功能范围
+## 6. Feature Scope
 
-### 6.1 P0：必须完成
+### 6.1 P0: Must-have
 
-#### 6.1.1 应用框架与导航
+#### 6.1.1 App shell and navigation
 
-- 顶部展示当前文档名与 Study / Ask / Insights 三个主导航。
-- 语言切换（中文 / English）固定在顶部，切换后闪卡与问答界面文案即时更新；用户上传的文档内容与生成内容不做翻译。
+- The top bar shows the current document name and the three main tabs: Study / Ask / Insights.
+- A language toggle (中文 / English) stays fixed at the top; switching it updates the flashcard and Q&A UI copy instantly. Uploaded document content and generated content are not translated.
 
-#### 6.1.2 PDF 处理与主题抽取（沿用 v1，保持稳定）
+#### 6.1.2 PDF processing and topic extraction (carried over from v1, kept stable)
 
-- 支持上传 PDF，展示处理进度（分块中 / 向量化中 / 完成）。
-- 处理完成后自动抽取关键词/主题，供用户多选。
-- 同一份 PDF 只处理一次，向量库持久化，重复提问不重新处理。
+- Support PDF upload, with visible processing progress (chunking / embedding / done).
+- Automatically extract keywords/topics for multi-select once processing completes.
+- Each PDF is processed only once; the vector store persists so repeated questions don't trigger reprocessing.
 
-#### 6.1.3 闪卡生成与作答（沿用 v1，保持稳定）
+#### 6.1.3 Flashcard generation and answering (carried over from v1, kept stable)
 
-- 基于所选主题生成指定数量的闪卡。
-- 支持语音或文本作答。
-- AI 评分（1–10）、文字反馈与标准答案。
-- 会话结束展示总结，支持对答错卡片重新作答。
+- Generate a specified number of flashcards based on selected topics.
+- Support voice or text answers.
+- AI score (1–10), written feedback, and a model answer.
+- Show a summary at session end, with the option to retry cards answered incorrectly.
 
-#### 6.1.4 多轮问答（沿用 v1，新增溯源）
+#### 6.1.4 Multi-turn Q&A (carried over from v1, evidence tracing added)
 
-- 支持针对文档提出开放性问题，保留对话上下文。
-- 每条回答默认折叠展示"查看依据"入口。
+- Support open-ended questions about the document while preserving conversation context.
+- Each answer defaults to a collapsed "View evidence" entry point.
 
-#### 6.1.5 证据溯源面板（v2 新增，核心功能）
+#### 6.1.5 Evidence-trace panel (new in v2, core feature)
 
-- 每次检索的 top-k 片段及相似度分数以结构化事件形式记录，不仅用于生成答案，也用于前端展示。
-- 用户点击"查看依据"，展开对应片段原文，并尽可能高亮定位到 PDF 原文位置。
-- 若最高相似度低于预设阈值，在回答上方显示醒目但非阻断的低置信度提示。
-- 溯源数据结构与生成逻辑解耦：更换 LLM 供应商不影响溯源展示。
+- Each retrieval's top-k chunks and similarity scores are logged as structured events — used both for generation and for frontend display.
+- Clicking "View evidence" expands the corresponding source excerpt, highlighted and located to the original PDF position wherever possible.
+- If the top similarity falls below a preset threshold, show a noticeable but non-blocking low-confidence hint above the answer.
+- The evidence data structure is decoupled from the generation logic: switching LLM providers doesn't affect evidence display.
 
-#### 6.1.6 离线评估流水线（v2 新增，核心功能）
+#### 6.1.6 Offline evaluation pipeline (new in v2, core feature)
 
-- 维护一份人工标注的测试集（question / ground_truth_answer / source_section / question_type），初始至少 20 条，覆盖 factual / concept / reasoning 三类。
-- 评估脚本对测试集中每个问题执行：
-  - 检索评估：top-k 片段与标准答案的语义相关度。
-  - 生成评估：最终答案与标准答案的语义相似度，以及 LLM-as-judge 的 1–5 分打分与理由。
-- 输出结构化结果（CSV）与按题型分组的汇总统计。
-- 支持记录多轮评估结果，用于对比不同 chunk size / top-k / embedding 模型的效果差异。
+- Maintain a manually labeled test set (question / ground_truth_answer / source_section / question_type), at least 20 items initially, covering factual / conceptual / reasoning types.
+- For each question in the test set, the evaluation script performs:
+  - Retrieval evaluation: semantic relevance between top-k chunks and the ground-truth answer.
+  - Generation evaluation: semantic similarity between the final answer and the ground truth, plus an LLM-as-judge score (1–5) with a rationale.
+- Output structured results (CSV) and summary statistics grouped by question type.
+- Support recording results across multiple evaluation runs, to compare the effects of different chunk sizes / top-k / embedding models.
 
-#### 6.1.7 Insights 评估看板
+#### 6.1.7 Insights evaluation dashboard
 
-- 以图表形式展示最近一次评估的分题型表现（检索相关度、生成相似度、LLM 评分三组柱状图）。
-- 展示历次评估的对比趋势（例如 chunk size 从 300 调整到 500 后各指标的变化）。
-- 该看板主要面向开发者自查与作品集展示，不要求面向普通学习者做深度可用性打磨。
+- Show, in chart form, the most recent evaluation's performance by question type (three grouped bar charts: retrieval relevance, generation similarity, LLM score).
+- Show comparison trends across evaluation runs (e.g. how metrics change when chunk size moves from 300 to 500).
+- This dashboard is primarily for developer self-checks and portfolio presentation; it does not need deep usability polish for a general learner audience.
 
-### 6.2 P1：有剩余工时再做
+### 6.2 P1: If time remains
 
-P1 不得挤占 P0 的功能完整度与验证时间，按以下顺序实现：
+P1 must not crowd out P0's feature completeness or verification time. Implement in this order:
 
-1. Next.js + TypeScript 重构前端（替换现有 vanilla HTML/JS），复用溯源面板与 Insights 看板为独立可复用组件。
-2. A/B 对比模式：同一问题分别用"无溯源版"和"有溯源版"界面呈现，供用户体验研究（结合 SUS/信任度量表）。
-3. 支持一次性对比多个 embedding 模型或 LLM 供应商的评估结果。
-4. 检索片段的关键词高亮（不止定位段落，还标出具体匹配到的关键短语）。
+1. Rebuild the frontend in Next.js + TypeScript (replacing the current vanilla HTML/JS), turning the evidence panel and Insights dashboard into independent, reusable components.
+2. An A/B comparison mode: present the same question with a "no evidence" version and an "evidence-shown" version of the UI, for user research (combined with an SUS / trust scale).
+3. Support comparing multiple embedding models or LLM providers' evaluation results at once.
+4. Keyword-level highlighting within retrieved chunks (not just locating the paragraph, but marking the specific matched key phrases).
 
-### 6.3 明确不在本次范围
+### 6.3 Explicitly out of scope for this round
 
-- 多用户账号、权限与云端同步。
-- 多文档交叉检索（一次会话仅针对单一 PDF）。
-- 实时协作、评论与分享功能。
-- 自动化的 embedding/LLM 供应商动态路由或成本优化。
-- 面向移动端的原生适配，小屏仅保证内容可访问。
-- 生产级安全加固（本项目定位为学习/作品集用途，非商用部署）。
+- Multi-user accounts, permissions, and cloud sync.
+- Cross-document retrieval (each session targets a single PDF only).
+- Real-time collaboration, comments, and sharing features.
+- Automated dynamic routing or cost optimization across embedding/LLM providers.
+- Native mobile adaptation — small screens only need to guarantee content accessibility.
+- Production-grade security hardening (this project is positioned for learning/portfolio use, not commercial deployment).
 
-## 7. 关键用户流程
+## 7. Key User Flows
 
-### 7.1 上传并学习一份新资料
+### 7.1 Upload and study a new document
 
-1. 用户上传 PDF，等待处理完成。
-2. 选择若干主题，生成闪卡。
-3. 逐张作答，查看 AI 评分与反馈。
-4. 对反馈中的关键判断点击"查看依据"，确认评分依据的原文片段。
+1. The user uploads a PDF and waits for processing to complete.
+2. They select a few topics to generate flashcards.
+3. They answer the cards one by one, viewing the AI score and feedback.
+4. For a key judgment in the feedback, they click "View evidence" to confirm the source excerpt the score was based on.
 
-### 7.2 提问并验证答案可信度
+### 7.2 Ask a question and verify the answer's credibility
 
-1. 用户在 Ask 模式下提出问题。
-2. 系统生成回答，同时折叠展示"查看依据"。
-3. 用户展开依据，看到被引用的原文片段与相似度分数。
-4. 若相似度较低，用户看到提示，可自行判断是否需要换个问法或查阅原文。
+1. The user asks a question in Ask mode.
+2. The system generates an answer, with a collapsed "View evidence" shown alongside it.
+3. The user expands the evidence to see the cited source excerpt and similarity score.
+4. If the similarity is low, the user sees a hint and can decide for themselves whether to rephrase the question or check the source directly.
 
-### 7.3 开发者验证一次参数调整
+### 7.3 A developer verifies a parameter change
 
-1. 开发者修改 chunk size 或 top-k 参数。
-2. 运行离线评估脚本，对同一批标注问题重新评测。
-3. 在 Insights 看板中对比本次与上一次的分题型指标。
-4. 根据数据决定是否合并该参数调整。
+1. The developer changes the chunk size or top-k parameter.
+2. They run the offline evaluation script against the same labeled question set.
+3. They compare this run's per-question-type metrics against the previous run in the Insights dashboard.
+4. They decide, based on the data, whether to merge the parameter change.
 
-## 8. RAG 系统架构与可观测性设计
+## 8. RAG System Architecture and Observability Design
 
 ```
 PDF → Chunking → Embedding → ChromaDB
                                  ↓
-User Query → Query Embedding → Retrieval (top-k) ──→ 检索事件记录
+User Query → Query Embedding → Retrieval (top-k) ──→ Retrieval event log
                                         ↓                  │
-                                    LLM Generation ──→ 生成事件记录
+                                    LLM Generation ──→ Generation event log
                                         ↓                  │
-                                  最终答案 + 溯源面板 ←──────┘
+                                Final answer + evidence panel ←──────┘
                                         ↓
-                          （可选）写入评估日志，供 Insights 看板读取
+                          (optional) written to the eval log, read by the Insights dashboard
 ```
 
-**关键设计约束：**
+**Key design constraints:**
 
-- 检索事件与生成事件使用统一的结构化 schema 记录（问题、chunk 文本、相似度、排名、生成答案、耗时），前端溯源面板与后端评估脚本读取同一份数据结构，避免两套逻辑各自为政。
-- 评估脚本与线上问答复用同一套 `retrieve()` 和 `generate_answer()` 函数，保证"评估时的系统"和"用户实际用的系统"是同一个，而不是两个可能出现偏差的实现。
-- LLM-as-judge 的评分 prompt 与阈值需要版本化记录，便于回溯"某次评估分数变化"是系统变了还是评分标准变了。
+- Retrieval events and generation events are logged with a unified structured schema (question, chunk text, similarity, rank, generated answer, latency); the frontend evidence panel and the backend evaluation script read from the same data structure, avoiding two divergent implementations.
+- The evaluation script and the live Q&A path reuse the same `retrieve()` and `generate_answer()` functions, guaranteeing that "the system being evaluated" and "the system the user actually uses" are one and the same — not two implementations that could drift apart.
+- The LLM-as-judge scoring prompt and threshold must be version-tracked, so it's possible to trace back whether a change in evaluation scores over time came from a system change or a change in scoring criteria.
 
-## 9. 界面与交互要求
+## 9. UI and Interaction Requirements
 
-### 9.1 视觉方向
+### 9.1 Visual direction
 
-- 延续 v1 的磨砂玻璃（frosted glass）风格，整体保持柔和、专业、信息密度适中。
-- 溯源面板与 Insights 看板作为"次级信息层"，视觉权重低于核心闪卡/问答内容，通过折叠、弱化配色区分层级。
-- 低置信度提示需要足够醒目但不打断阅读流程（参考警示色 + 图标，不使用弹窗阻断）。
+- Continue v1's frosted-glass style, keeping the overall feel soft, professional, and moderately information-dense.
+- The evidence panel and Insights dashboard act as a "secondary information layer" — visually lighter than the core flashcard/Q&A content, distinguished through collapsing and a muted color treatment.
+- Low-confidence hints need to be noticeable enough without interrupting the reading flow (use a warning color + icon; no blocking modal dialogs).
 
-### 9.2 响应式范围
+### 9.2 Responsive range
 
-- 主要验收视口：桌面端 1280×720 及以上。
-- 768–1279 px：Insights 看板图表允许纵向堆叠。
-- 小于 768 px：保证 Study 与 Ask 核心流程可用；Insights 看板不作为移动端验收项。
+- Primary acceptance viewport: desktop, 1280×720 and above.
+- 768–1279 px: Insights dashboard charts may stack vertically.
+- Below 768 px: the Study and Ask core flows must remain usable; the Insights dashboard is not a mobile acceptance requirement.
 
-### 9.3 基础可访问性
+### 9.3 Baseline accessibility
 
-- 溯源面板可通过键盘展开/收起。
-- 相似度分数、置信度提示不单纯依赖颜色表达，需搭配文字或图标。
-- 文本与背景对比度以 WCAG AA 为目标。
+- The evidence panel can be expanded/collapsed via keyboard.
+- Similarity scores and confidence hints must not rely on color alone — pair them with text or an icon.
+- Text-to-background contrast should target WCAG AA.
 
-## 10. 概念数据模型
+## 10. Conceptual Data Model
 
 ```ts
 interface RetrievedChunk {
   text: string;
   similarityScore: number;   // 0–1
-  rank: number;              // 在本次 top-k 中的排名
+  rank: number;              // rank within this top-k retrieval
   sourcePage?: number;
 }
 
@@ -242,7 +242,7 @@ interface RagEvent {
   question: string;
   retrievedChunks: RetrievedChunk[];
   generatedAnswer: string;
-  confidenceLevel: "high" | "low"; // 基于 top-1 相似度阈值判定
+  confidenceLevel: "high" | "low"; // determined by the top-1 similarity threshold
   latencyMs: number;
   createdAt: string;
 }
@@ -256,104 +256,104 @@ interface EvalRecord {
   generationSimilarity: number;       // embedding similarity
   llmJudgeScore: number;              // 1–5
   llmJudgeReason: string;
-  runId: string;    // 用于区分不同参数配置下的多轮评估
+  runId: string;    // distinguishes evaluation runs across different parameter configurations
   createdAt: string;
 }
 ```
 
-实现时，检索、生成与评估三层应通过统一的数据访问接口交互，前端溯源面板消费 `RagEvent`，Insights 看板消费聚合后的 `EvalRecord` 集合，二者不直接耦合。
+In implementation, the retrieval, generation, and evaluation layers should interact through a unified data-access interface. The frontend evidence panel consumes `RagEvent`; the Insights dashboard consumes an aggregated collection of `EvalRecord`. The two are not directly coupled.
 
-## 11. 非功能要求
+## 11. Non-Functional Requirements
 
-### 11.1 性能
+### 11.1 Performance
 
-- 单份 PDF（约 50 页以内）处理完成时间目标小于 60 秒。
-- 溯源面板展开无需二次请求，检索结果应随生成结果一并返回并缓存。
+- Target processing time for a single PDF (up to ~50 pages) under 60 seconds.
+- Expanding the evidence panel requires no second request — retrieval results should be returned and cached alongside the generated answer.
 
-### 11.2 兼容性
+### 11.2 Compatibility
 
-- P0 验收浏览器：最新版 Chrome。
+- P0 acceptance browser: the latest version of Chrome.
 
-### 11.3 隐私与安全
+### 11.3 Privacy and security
 
-- 上传的 PDF 与生成内容仅在本地/单次会话中处理，不用于模型训练用途之外的留存。
-- API Key 通过环境变量管理，不在前端代码中硬编码或暴露。
+- Uploaded PDFs and generated content are processed locally/within a single session only, and are not retained beyond that except as needed for model use.
+- API keys are managed via environment variables, never hardcoded or exposed in frontend code.
 
-### 11.4 可维护性
+### 11.4 Maintainability
 
-- 检索层、生成层、评估层、前端展示层分离为清晰模块，符合第 8 节的架构约束。
-- 评估脚本可独立于 Web 应用运行，不依赖前端环境。
-- 关键行为至少覆盖自动化测试：检索函数返回结构正确性、评估脚本的分数解析容错、置信度阈值判定逻辑。
+- The retrieval, generation, evaluation, and frontend presentation layers are separated into clear modules, consistent with the architectural constraints in Section 8.
+- The evaluation script can run independently of the web app, with no dependency on the frontend environment.
+- Key behaviors are covered by at least minimal automated tests: correctness of the retrieval function's return structure, fault tolerance in the evaluation script's score parsing, and the confidence-threshold decision logic.
 
-## 12. 交付计划与取舍门槛
+## 12. Delivery Plan and Trade-off Thresholds
 
-| 时间 | 工作内容 | 退出条件 |
+| Time | Work | Exit criteria |
 | --- | --- | --- |
-| Day 1 上午 | 统一检索/生成事件的数据结构；改造现有 retrieve/generate 函数以记录结构化事件 | 事件数据可在后端日志中完整查看 |
-| Day 1 下午 | 前端溯源面板开发；接入 Study 与 Ask 两个模式 | 用户可在两种模式下展开查看依据 |
-| Day 2 上午 | 离线评估脚本完善；标注测试集补充至 20 条以上 | 评估脚本可完整跑通并输出 CSV |
-| Day 2 下午 | Insights 看板开发；跑通首轮评估并生成对比图表 | 看板可展示分题型统计与至少一轮参数对比 |
+| Day 1 AM | Unify the retrieval/generation event data structure; adapt the existing retrieve/generate functions to log structured events | Event data is fully visible in backend logs |
+| Day 1 PM | Build the frontend evidence panel; wire it into both Study and Ask modes | Users can expand "view evidence" in both modes |
+| Day 2 AM | Finish the offline evaluation script; expand the labeled test set to 20+ items | The evaluation script runs end-to-end and outputs a CSV |
+| Day 2 PM | Build the Insights dashboard; run the first evaluation pass and generate comparison charts | The dashboard shows per-question-type stats and at least one parameter comparison |
 
-取舍规则：
+Trade-off rules:
 
-1. 若时间不足，优先保证溯源面板（P0 核心体验），Insights 看板可降级为脚本输出的静态图表，不做完整前端页面。
-2. 若 LLM-as-judge 打分不稳定（格式解析失败率高），先用纯 embedding 相似度作为过渡指标，评分部分标注为"实验性"。
-3. 评估测试集数量不足 20 条时，先用现有数量跑通流程，后续持续补充，不阻塞主线开发。
+1. If time is short, prioritize the evidence panel (the P0 core experience) — the Insights dashboard can be downgraded to a static chart from the script's output rather than a full frontend page.
+2. If LLM-as-judge scoring is unstable (a high format-parsing failure rate), fall back to pure embedding similarity as an interim metric, and label the scoring section "experimental."
+3. If the evaluation test set has fewer than 20 items, run the pipeline with what's available and keep adding items later — this should not block the main development line.
 
-## 13. 验收标准
+## 13. Acceptance Criteria
 
-### 13.1 功能验收
+### 13.1 Functional acceptance
 
-- [ ] 上传 PDF 后可正常生成闪卡并完成一轮完整作答。
-- [ ] 问答模式下每条回答均可展开查看依据，展示原文片段与相似度分数。
-- [ ] 低置信度回答有明确提示。
-- [ ] 离线评估脚本可对标注测试集完整运行，输出 CSV 与分题型汇总统计。
-- [ ] Insights 看板可展示至少一轮评估结果的可视化图表。
+- [ ] After uploading a PDF, flashcards can be generated and a full round of answering completed normally.
+- [ ] In Q&A mode, every answer can expand to show evidence, displaying the source excerpt and similarity score.
+- [ ] Low-confidence answers carry a clear hint.
+- [ ] The offline evaluation script runs end-to-end against the labeled test set, outputting a CSV and per-question-type summary stats.
+- [ ] The Insights dashboard can display a visualization of at least one evaluation run's results.
 
-### 13.2 质量验收
+### 13.2 Quality acceptance
 
-- [ ] 1280×720 视口下核心流程无阻塞性遮挡。
-- [ ] 最新版 Chrome 中无阻塞级控制台错误。
-- [ ] 评估脚本在标注测试集上跑通率（无异常报错的问题占比）达到 100%。
+- [ ] No blocking visual obstruction in the core flow at a 1280×720 viewport.
+- [ ] No blocking console errors in the latest version of Chrome.
+- [ ] The evaluation script achieves a 100% run-through rate (no unhandled errors) on the labeled test set.
 
-### 13.3 阻塞级缺陷定义
+### 13.3 Definition of blocking defects
 
-- 溯源面板展示的片段与实际用于生成答案的片段不一致。
-- 评估脚本输出的分数与人工抽查结果明显矛盾（例如高分回答实际是错误答案）。
-- 检索或生成失败时前端无错误提示，表现为静默卡死。
+- The excerpt shown in the evidence panel doesn't match the excerpt actually used to generate the answer.
+- The evaluation script's output scores clearly contradict manual spot-checks (e.g. a high-scoring answer is actually wrong).
+- Retrieval or generation failures produce no frontend error message, resulting in a silent hang.
 
-## 14. 交付物
+## 14. Deliverables
 
-- 可运行的 Web 应用源码（含证据溯源面板）。
-- 独立可运行的离线评估脚本与示例标注测试集。
-- Insights 看板（页面或静态图表任一形式）。
-- README：架构说明、评估方法论、已知限制。
-- 至少一份完整的评估结果记录（CSV + 图表），作为作品集展示材料。
+- Runnable web app source code (including the evidence-trace panel).
+- An independently runnable offline evaluation script with a sample labeled test set.
+- The Insights dashboard (either as a page or as static charts).
+- A README: architecture overview, evaluation methodology, known limitations.
+- At least one complete evaluation result record (CSV + charts), as portfolio material.
 
-## 15. 后续演进路线
+## 15. Roadmap
 
-### Phase 1：工程质量与前端体验
+### Phase 1: Engineering quality and frontend experience
 
-- Next.js + TypeScript 重构，溯源面板与 Insights 看板组件化、可复用。
-- 检索片段关键词级高亮。
+- Rebuild in Next.js + TypeScript; make the evidence panel and Insights dashboard componentized and reusable.
+- Keyword-level highlighting within retrieved chunks.
 
-### Phase 2：评估方法论深化
+### Phase 2: Deepening the evaluation methodology
 
-- 引入更成熟的 RAG 评估框架（如 RAGAS）替代自建的 LLM-as-judge。
-- 支持同时对比多个 embedding 模型或多个 LLM 供应商的效果。
-- 结合用户研究方法（A/B 测试、SUS/信任度量表），验证"可解释性是否真的提升用户信任与学习效果"。
+- Adopt a more mature RAG evaluation framework (e.g. RAGAS) in place of the custom-built LLM-as-judge.
+- Support comparing multiple embedding models or multiple LLM providers' results at the same time.
+- Combine with user research methods (A/B testing, an SUS/trust scale) to verify whether explainability actually improves user trust and learning outcomes.
 
-### Phase 3：跨项目复用
+### Phase 3: Cross-project reuse
 
-- 将溯源面板与评估流水线抽象为可复用的通用组件，接入其他 AI 项目（如会议助手、车辆助手），形成统一的"AI 决策可观测性"工具集。
+- Abstract the evidence panel and evaluation pipeline into reusable general-purpose components, and integrate them into other AI projects (e.g. a meeting assistant, a vehicle assistant), forming a unified "AI decision observability" toolkit.
 
-### 15.1 为演进预留的实现边界
+### 15.1 Implementation boundaries reserved for future evolution
 
-- `Retriever`：隔离具体向量库实现（ChromaDB），未来可替换为其他向量数据库。
-- `LLMClient`：统一生成与评分调用入口，便于切换供应商。
-- `EvalRunner`：评估逻辑与 Web 应用解耦，可独立作为 CLI 工具或 CI 流程运行。
-- 溯源数据结构（`RagEvent`）与评估数据结构（`EvalRecord`）保持独立但可关联，便于未来把线上真实交互数据也纳入评估样本。
+- `Retriever`: isolates the concrete vector store implementation (ChromaDB), so it can later be swapped for a different vector database.
+- `LLMClient`: a unified entry point for generation and scoring calls, making it easy to switch providers.
+- `EvalRunner`: evaluation logic decoupled from the web app, able to run independently as a CLI tool or in a CI pipeline.
+- The evidence data structure (`RagEvent`) and the evaluation data structure (`EvalRecord`) remain independent but linkable, making it easier to later fold real production interaction data into the evaluation sample set.
 
-## 16. 发布决策
+## 16. Release Decision
 
-满足全部功能验收、质量验收且不存在阻塞级缺陷时即可发布 v2。Insights 看板的完整前端呈现（相对于脚本静态输出）不影响发布判断，可作为已知限制记录，后续在 Phase 1 中补齐。
+v2 can ship once all functional and quality acceptance criteria are met and no blocking defects remain. Whether the Insights dashboard is a full frontend build versus a static script output does not affect the release decision — it can be recorded as a known limitation and completed later in Phase 1.
